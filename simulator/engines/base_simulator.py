@@ -4,7 +4,7 @@ import torch
 import os
 from src.utils.viz import plot_seq2image, plot_image
 import matplotlib.pyplot as plt
-import tqdm
+from tqdm import tqdm
 import mediapy
 class BaseSimulator():
     def __init__(self,

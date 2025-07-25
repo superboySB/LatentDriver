@@ -1,0 +1,29 @@
+{
+    // 使用 VSCode Python 调试器，自动设置环境变量，便于调试 simulate.py
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug simulate.py (planT)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/simulate.py",
+            "console": "integratedTerminal",
+            "env": {
+                "WAYMO_DATASET_PATH": "/workspace/tiny_waymo",
+                "ROOT_PATH": "/workspace/tiny_waymo",
+                "WOMD_VAL_PATH": "/workspace/tiny_waymo/tf_example/uncompressed_tf_example_validation_validation_tfexample.tfrecord-00000-of-00150",
+                "PRE_PROCESS_VAL_PATH": "/workspace/tiny_waymo/processed",
+                "INTENTION_VAL_PATH": "/workspace/tiny_waymo/intention_label"
+            },
+            "args": [
+                "method=planT",
+                "++waymax_conf.path=/workspace/tiny_waymo/tf_example/uncompressed_tf_example_validation_validation_tfexample.tfrecord-00000-of-00150",
+                "++data_conf.path_to_processed_map_route=/workspace/tiny_waymo/processed",
+                "++metric_conf.intention_label_path=/workspace/tiny_waymo/intention_label",
+                "++batch_dims=[1,16]",
+                "++ego_control_setting.npc_policy_type=idm",
+                "++method.ckpt_path=checkpoints/planT.ckpt"
+            ]
+        }
+    ]
+} 

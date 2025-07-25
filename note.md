@@ -39,9 +39,8 @@ python simulate.py method=planT \
         ++metric_conf.intention_label_path="${INTENTION_VAL_PATH}" \
         ++batch_dims=[1,16] \
         ++ego_control_setting.npc_policy_type=idm \
-        ++method.ckpt_path='checkpoints/planT.ckpt' \
-        vis=video
+        ++method.ckpt_path='checkpoints/planT.ckpt' 
 ```
-在你的代码和 JAX 框架下：
+最后加`vis=video`可以打印mp4。根据性能有两个关键参数：
 - batch_dims[0] 必须 ≤ 物理设备数（jax.local_device_count()）。
 - batch_dims[1] 是每个设备上并行的环境/样本数，直接影响单卡显存消耗。
