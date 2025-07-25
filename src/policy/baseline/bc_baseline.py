@@ -9,7 +9,7 @@ class Simple_driver(pl.LightningModule):
     def __init__(self,
                  action_space,
                  hidden_channels:list[int] = [64,64],
-                 control_type:str = 'bicycle',
+                 control_type:str = None,
                  discretizer:Discretizer = None,
                  optimizer = None,
                  encoder = None,
@@ -17,12 +17,21 @@ class Simple_driver(pl.LightningModule):
                  **kwarg,
                  ):
         super().__init__()
-        self.control_type = action_space.dynamic_type
+        # 兼容 action_space 为 dict 或对象
+        if isinstance(action_space, dict):
+            control_type_val = action_space.get('dynamic_type', None)
+        else:
+            control_type_val = getattr(action_space, 'dynamic_type', None)
+        # 优先使用传入的 control_type 参数，否则用 action_space.dynamic_type
+        self.control_type = control_type if control_type is not None else control_type_val
         self.discretizer = discretizer
-        if control_type == 'bicycle':
+        if self.control_type == 'bicycle':
             out_dim = 2 if discretizer is None else discretizer._max_discrete_idx+1
-        elif control_type == 'waypoint':
+        elif self.control_type == 'waypoint':
             out_dim = 3 if discretizer is None else discretizer._max_discrete_idx+1
+        else:
+            raise ValueError(f"Unknown control_type: {self.control_type}, action_space: {action_space}")
+        print(f"[Simple_driver] control_type: {self.control_type}, out_dim: {out_dim}")
         self.bert = build_enc(encoder)
         self.optim_conf = optimizer
         self.sched_conf = scheduler

@@ -9,6 +9,9 @@ import torch
 def simulate(cfg):
     OmegaConf.set_struct(cfg, False)  # Open the struct
     cfg = OmegaConf.merge(cfg, cfg.method)
+
+    print(cfg)
+    
     model = build_model(cfg)
     cfg = update_waymax_config(cfg)
     if cfg.ckpt_path is not None:
@@ -16,6 +19,7 @@ def simulate(cfg):
         print(f'Loaded {cfg.ckpt_path}')
     else:
         print('No ckpt provided')
+    
     runner = LTDSimulator(
         model = model,
         config=cfg,

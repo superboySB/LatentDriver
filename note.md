@@ -37,7 +37,11 @@ python simulate.py method=planT \
         ++waymax_conf.path="${WOMD_VAL_PATH}" \
         ++data_conf.path_to_processed_map_route="${PRE_PROCESS_VAL_PATH}" \
         ++metric_conf.intention_label_path="${INTENTION_VAL_PATH}" \
-        ++batch_dims=[7,125] \
+        ++batch_dims=[1,16] \
         ++ego_control_setting.npc_policy_type=idm \
-        ++method.ckpt_path='checkpoints/planT.ckpt'
+        ++method.ckpt_path='checkpoints/planT.ckpt' \
+        vis=video
 ```
+在你的代码和 JAX 框架下：
+- batch_dims[0] 必须 ≤ 物理设备数（jax.local_device_count()）。
+- batch_dims[1] 是每个设备上并行的环境/样本数，直接影响单卡显存消耗。
