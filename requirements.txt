@@ -1,8 +1,8 @@
 setuptools>=41.0.0
-tensorflow
+# tensorflow
 # if your jaxlib is different, modify this two.
-chex==0.1.5
-flax==0.6.0
+# chex==0.1.5
+# flax==0.6.0
 dm_env>=1.6
 matplotlib>=3.7.1
 dm-tree>=0.1.8

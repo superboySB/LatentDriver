@@ -13,4 +13,4 @@ import tensorflow as tf
 physical_devices = tf.config.list_physical_devices('GPU')
 for device in physical_devices:
     tf.config.experimental.set_memory_growth(device, True)
-tf.config.experimental.set_visible_devices(physical_devices[-1], 'GPU')
+# tf.config.experimental.set_visible_devices(physical_devices[-1], 'GPU')
