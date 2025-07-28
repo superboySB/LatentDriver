@@ -277,6 +277,56 @@ class LTDSimulator:
                     # - 第6维: yaw (朝向角度，度为单位，已转换到ego坐标系)
                     # - 第7维: speed (速度，仅车辆有此特征) 或 id (路径段/道路图的标识)
                     # 
+                    # ========== 7维向量的预处理和变换详解 ==========
+                    # 
+                    # 1. 坐标系变换 (src/simulator/observation.py):
+                    #    - 所有对象的坐标都转换到ego车辆为中心的坐标系
+                    #    - 使用ObjectPose2D进行刚性变换
+                    #    - 变换矩阵: pose_global2ego = combine_two_object_pose_2d(src_pose, dst_pose)
+                    #    - 坐标变换: transformed_xy = transform_points(pts, pose_matrix)
+                    #    - 角度变换: transformed_yaw = transform_yaw(-sdc_yaw, original_yaw)
+                    # 
+                    # 2. 角度单位转换:
+                    #    - 原始yaw: 弧度制 (radian)
+                    #    - 转换后yaw: 度制 (degree)
+                    #    - 转换公式: yaw_degree = yaw_radian * 180 / π
+                    #    - 代码实现: yaw = sdc_obs.trajectory.yaw * 180 / np.pi
+                    # 
+                    # 3. 视野范围过滤:
+                    #    - 视野范围: 80m × 20m (可配置)
+                    #    - 过滤条件: |x| > 40m 或 |y| > 10m
+                    #    - 超出范围的对象被置零 (padding)
+                    #    - 代码实现: padding_exceed() 函数
+                    # 
+                    # 4. 数值处理:
+                    #    - 无数值归一化: 所有数值保持原始尺度
+                    #    - 无标准化: 没有进行z-score或min-max归一化
+                    #    - 直接使用原始物理单位: 米、度、米/秒
+                    # 
+                    # 5. 具体变换过程:
+                    #    a) 车辆数据 (get_vehicle_obs):
+                    #       - xy: 已转换到ego坐标系
+                    #       - yaw: 弧度→度，已转换到ego坐标系
+                    #       - width/length: 保持原始值
+                    #       - speed: 保持原始值
+                    #    
+                    #    b) 道路图数据 (downsampled_elements_transformation):
+                    #       - xy: 全局坐标→ego坐标系
+                    #       - yaw: 弧度→度，全局→ego坐标系
+                    #       - width/length: 保持原始值
+                    #       - id: 保持原始值
+                    #    
+                    #    c) 路径段数据:
+                    #       - 与道路图数据相同的变换过程
+                    # 
+                    # ========== 重要说明 ==========
+                    # 
+                    # - 坐标系变换是必须的，确保模型以ego车辆为参考点
+                    # - 角度单位转换是必要的，因为模型训练时使用度制
+                    # - 视野范围过滤提高计算效率，减少无关信息
+                    # - 无数值归一化保持物理意义的直观性
+                    # - 所有变换都在数据预处理阶段完成，模型直接使用变换后的数据
+                    # 
                     # ========== 实际数据举例说明 ==========
                     # 
                     # 以下是一个实际场景中188个向量的第一维(类型ID)分布示例：
@@ -298,15 +348,57 @@ class LTDSimulator:
                     # 这个顺序是固定的，不能随意打乱，因为：
                     # 1. BertEncoder中的掩码处理依赖于对象在序列中的位置
                     # 2. 不同类型的对象使用不同的嵌入层
-                    # 3. 模型最终输出取第一个token (CLS token)
+                    # 3. 模型最终输出取第一个token (CLS token，位于序列开头)
                     # 4. 路径段、车辆、道路图的相对位置关系对模型理解场景很重要
+                    # 5. CLS token有独立的类型维度，不参与对象类型掩码处理
+                    # 
+                    # ========== 模型输出和动作范围限制机制详解 ==========
                     # 
                     # 输出维度 (3,) 的含义 - waypoint模式的动作：
                     # - dx: x方向位移 (米)，范围[-0.14, 6.0]，在ego车辆坐标系中
                     # - dy: y方向位移 (米)，范围[-0.35, 0.35]，在ego车辆坐标系中
                     # - dyaw: 朝向角变化 (弧度)，范围[-0.15, 0.15]
                     # 
-                    # 动作作用机制：
+                    # ========== 模型输出处理流程 ==========
+                    # 
+                    # 1. 模型原始输出：
+                    #    - planT模型直接输出3维向量 [dx, dy, dyaw]
+                    #    - 输出值范围：理论上可以是任意实数 (无限制)
+                    #    - 输出格式：torch.Tensor，形状为 (batch_size, 3)
+                    # 
+                    # 2. 输出后处理：
+                    #    - 转换为numpy数组：action.detach().cpu().numpy()
+                    #    - 直接传递给环境：control_action = action
+                    #    - 无额外的normalization或denormalization步骤
+                    # 
+                    # 3. 环境中的动作处理：
+                    #    - 环境接收原始动作值
+                    #    - 通过DeltaLocal动力学模型处理动作
+                    #    - 在动力学模型中实现范围限制
+                    # 
+                    # ========== 动作范围限制机制 ==========
+                    # 
+                    # 范围限制在以下位置实现：
+                    # 
+                    # 1. 配置文件定义 (simulate_plant.yaml):
+                    #    action_ranges: [[-0.14, 6], [-0.35, 0.35], [-0.15,0.15]]
+                    # 
+                    # 2. 动力学模型裁剪 (waymax/dynamics/delta.py):
+                    #    def _clip_values(self, action: jax.Array) -> jax.Array:
+                    #        x = jnp.clip(action[..., 0], min=-0.14, max=6.0)
+                    #        y = jnp.clip(action[..., 1], min=-0.35, max=0.35)
+                    #        yaw = geometry.wrap_yaws(action[..., 2])  # 角度包装
+                    #        return jnp.stack([x, y, yaw], axis=-1)
+                    # 
+                    # 3. 动作空间规范 (src/simulator/waymo_base.py):
+                    #    self.action_space_ = gym.spaces.Box(
+                    #        low=np.array([-0.14, -0.35, -0.15]),
+                    #        high=np.array([6.0, 0.35, 0.15]),
+                    #        shape=(3,), dtype=np.float32
+                    #    )
+                    # 
+                    # ========== 动作作用机制 ==========
+                    # 
                     # 1. 通过DeltaLocal动力学模型将waypoint动作转换为全局坐标
                     #    - 使用当前ego车辆的yaw角度构建旋转矩阵
                     #    - 将局部坐标的dx,dy转换为全局坐标
@@ -315,6 +407,13 @@ class LTDSimulator:
                     # 4. 计算新的速度: vel_x = dx/dt, vel_y = dy/dt (dt=0.1秒)
                     # 5. 这些动作直接控制ego车辆在下一个时间步的位置和朝向
                     # 6. 动作会被限制在配置的范围内，超出范围会被裁剪
+                    # 
+                    # ========== 重要说明 ==========
+                    # 
+                    # - 模型输出是原始值，不是normalized值
+                    # - 范围限制在动力学模型层面实现，不在模型输出层面
+                    # - 如果模型输出超出范围，会被自动裁剪到有效范围内
+                    # - 这种设计允许模型学习更自然的动作分布，同时保证安全性
                     with torch.no_grad():
                         action = self.model.get_predictions(
                             torch.tensor(states,device =self.device),
