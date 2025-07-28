@@ -7,4 +7,4 @@ outputs
 map
 route
 *.pyc
-vis_results
+*.mp4

@@ -4,7 +4,8 @@ from src.utils.discretizer import Discretizer
 import pytorch_lightning as pl
 from src.policy.commons.optimzier import build_optimizer
 from src.policy.commons.scheduler import build_scheduler
-from ..commons.enc import build_model as build_enc
+from src.policy.commons.encoder import BertEncoder
+
 class Simple_driver(pl.LightningModule):
     def __init__(self,
                  action_space,
@@ -32,7 +33,7 @@ class Simple_driver(pl.LightningModule):
         else:
             raise ValueError(f"Unknown control_type: {self.control_type}, action_space: {action_space}")
         print(f"[Simple_driver] control_type: {self.control_type}, out_dim: {out_dim}")
-        self.bert = build_enc(encoder)
+        self.bert = BertEncoder(**encoder)
         self.optim_conf = optimizer
         self.sched_conf = scheduler
         self.lr = kwarg['learning_rate']
@@ -49,6 +50,7 @@ class Simple_driver(pl.LightningModule):
             last_linear_layer_init_zero=True,) 
             
         self.out_dim = out_dim
+
     def forward(
         self,
         states, # bs , seq_len, state_attributes, state_dim

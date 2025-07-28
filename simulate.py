@@ -2,9 +2,11 @@ import src.utils.init_default_jax
 import hydra
 from omegaconf import OmegaConf
 from simulator.engines.ltd_simulator import LTDSimulator
-from src.policy import build_model
+from src.policy.baseline.bc_baseline import Simple_driver
+
 from src.utils.utils import update_waymax_config
 import torch
+
 @hydra.main(version_base=None, config_path="configs", config_name="simulate")
 def simulate(cfg):
     OmegaConf.set_struct(cfg, False)  # Open the struct
@@ -12,7 +14,7 @@ def simulate(cfg):
 
     print(cfg)
     
-    model = build_model(cfg)
+    model = Simple_driver(**cfg.method)
     cfg = update_waymax_config(cfg)
     if cfg.ckpt_path is not None:
         model.load_state_dict(torch.load(cfg.ckpt_path,map_location='cuda:{}'.format(torch.cuda.device_count()-1))['state_dict'])

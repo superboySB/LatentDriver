@@ -18,6 +18,7 @@ def randomize_model(model):
             module_[1].bias.data.zero_()
     return model
 class BertEncoder(nn.Module):
+    
     def __init__(self,
                  type_name='bert-mini',
                  online=False,
@@ -29,6 +30,8 @@ class BertEncoder(nn.Module):
         # we think bicycle needs sdc_mask but not padding, but wpts needs padding not sdc_mask
         # 2.1 changed for bicycle
         self.control_type = embedding_type
+
+
         # self.control_type = 'bicycle'
         embedding_type = 5
         # end debug
@@ -37,6 +40,7 @@ class BertEncoder(nn.Module):
         if online:
             config_bert = AutoConfig.from_pretrained(os.path.join('prajjwal1',type_name))  # load config from hugging face model
             self.model = AutoModel.from_config(config=config_bert)   
+            
             
         else:
             self.model = AutoModel.from_pretrained(type_name)
