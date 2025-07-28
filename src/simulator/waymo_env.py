@@ -6,10 +6,10 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 from waymax import dynamics
-from simulator.waymo_base import WaymoBaseEnv
-from simulator.metric import Metric     
-from simulator.utils import combin_traj,build_discretizer,get_cache_polylines_baseline
-from simulator.observation import get_obs_from_routeandmap_saved,preprocess_data_dist_jnp
+from src.simulator.waymo_base import WaymoBaseEnv
+from src.simulator.metric import Metric     
+from src.simulator.utils import combin_traj,build_discretizer,get_cache_polylines_baseline
+from src.simulator.observation import get_obs_from_routeandmap_saved,preprocess_data_dist_jnp
 def get_obs(*args):
     data_dict,sdc_obs = get_obs_from_routeandmap_saved(*args)
     obs = preprocess_data_dist_jnp(data_dict)

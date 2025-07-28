@@ -6,7 +6,7 @@
             "name": "Debug simulate.py (planT)",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/simulate.py",
+            "program": "${workspaceFolder}/simulate_plant.py",
             "console": "integratedTerminal",
             "env": {
                 "WAYMO_DATASET_PATH": "/workspace/tiny_waymo",
@@ -16,12 +16,10 @@
                 "INTENTION_VAL_PATH": "/workspace/tiny_waymo/intention_label"
             },
             "args": [
-                "method=planT",
                 "++waymax_conf.path=/workspace/tiny_waymo/tf_example/uncompressed_tf_example_validation_validation_tfexample.tfrecord-00000-of-00150",
                 "++data_conf.path_to_processed_map_route=/workspace/tiny_waymo/processed",
                 "++metric_conf.intention_label_path=/workspace/tiny_waymo/intention_label",
                 "++batch_dims=[1,16]",
-                "++ego_control_setting.npc_policy_type=idm",
                 "++method.ckpt_path=checkpoints/planT.ckpt"
             ]
         }

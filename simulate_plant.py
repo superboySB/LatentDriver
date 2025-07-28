@@ -2,8 +2,8 @@ import hydra
 from omegaconf import OmegaConf
 
 from src.utils.utils import update_waymax_config
-from src.policy.baseline.mlp import MLP
-from simulator.waymo_env import WaymoEnv
+from src.utils.mlp import MLP
+from src.simulator.waymo_env import WaymoEnv
 from src.utils.viz import plot_image
 
 
@@ -325,7 +325,7 @@ class LTDSimulator:
                 save_video()
                 
 
-@hydra.main(version_base=None, config_path="configs", config_name="simulate_plant")
+@hydra.main(version_base=None, config_path=".", config_name="simulate_plant")
 def simulate(cfg):
     OmegaConf.set_struct(cfg, False)  # Open the struct
     cfg = OmegaConf.merge(cfg, cfg.method)

@@ -12,7 +12,7 @@ from waymax import datatypes
 from waymax import agents
 from waymax import dataloader
 from waymax.config import DatasetConfig
-from simulator.actor import create_control_actor
+from src.simulator.actor import create_control_actor
 from src.dataloader.waymax_scenloader import WaymoScenLoader
 class WaymoBaseEnv():
     def __init__(self,
